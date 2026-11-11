@@ -1,0 +1,24 @@
+{
+  "name": "Gym Tracker",
+  "short_name": "GymTracker",
+  "description": "Registra tus entrenamientos de gimnasio con libertad y estructura.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='44' fill='%2309090b'/><path d='M60 56v80M132 56v80M48 72v48M144 72v48M60 96h72M48 96h12M132 96h12' stroke='%2334d399' stroke-width='10' stroke-linecap='round'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='118' fill='%2309090b'/><path d='M160 150v212M352 150v212M128 192v128M384 192v128M160 256h192M128 256h32M352 256h32' stroke='%2334d399' stroke-width='26' stroke-linecap='round'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

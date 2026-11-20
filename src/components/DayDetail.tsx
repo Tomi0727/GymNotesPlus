@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Plus, CheckCircle2, Pencil, Trash2, Download, Upload } from 'lucide-react';
 import type { WorkoutDay, Exercise, Week } from '@/types';
 import { uid } from '@/lib/storage';
-import { useExerciseReorder } from '@/lib/useExerciseReorder';
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { ExerciseCard } from './ExerciseCard';
 import { ConfirmDialog } from './ConfirmDialog';
 
@@ -36,11 +37,8 @@ function importWeekFromLink(encodedData: string): Week | null {
         dualMode: Boolean(ex.dualMode),
         sets: Array.isArray(ex.sets) ? ex.sets : [],
         approxSets: Array.isArray(ex.approxSets) ? ex.approxSets : [],
-        setsReps: ex.setsReps || '',
-        load: ex.load || '',
-        lightSetsReps: ex.lightSetsReps || '',
-        lightLoad: ex.lightLoad || '',
         notes: ex.notes || '',
+
       })),
     };
   } catch (err) {
@@ -95,10 +93,19 @@ export function DayDetail({
   const prevWeek = activeWeekIdx > 0 ? day.weeks[activeWeekIdx - 1] : undefined;
   const isFirstWeek = activeWeekIdx === 0;
 
-  const reorder = useExerciseReorder((from, to) => {
-    if (activeWeek) onReorderExercises(activeWeek.id, from, to);
-  });
-
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: {distance: 5 }, }),
+    useSensor(TouchSensor, {activationConstraint: {delay: 250, tolerance: 5}, })
+  );
+  const HandleDragEnd = (event: DragEndEvent) => {
+    const {active, over} = event;
+    if (!activeWeek || !over || active.id === over.id) return;
+    const fromIndex = activeWeek.exercises.findIndex((ex) => ex.id === active.id);
+    const toIndex = activeWeek.exercises.findIndex((ex) => ex.id === over.id);
+    if (fromIndex !== -1 && toIndex !== -1) {
+      onReorderExercises(activeWeek.id, fromIndex, toIndex);
+    }
+  };
   const findPrevExercise = (title: string): Exercise | undefined => {
     const t = title.trim().toLowerCase();
     if (!prevWeek || !t) return undefined;
@@ -266,33 +273,30 @@ export function DayDetail({
 
         {activeWeek && (
           <>
-            <div ref={reorder.listRef} className="reorderable space-y-3">
-              {activeWeek.exercises.map((ex, i) => {
-                const side = reorder.dropSide(i);
-                return (
-                  <div key={ex.id} className="relative" style={reorder.itemStyle(i)} {...reorder.itemProps(i)}>
-                    {side && (
-                      <span
-                        aria-hidden
-                        className={`pointer-events-none absolute inset-x-3 z-30 h-1 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.7)] ${
-                          side === 'above' ? '-top-2' : '-bottom-2'
-                        }`}
-                      />
-                    )}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={HandleDragEnd}
+            >
+              <SortableContext
+                items={activeWeek.exercises.map((ex) => ex.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-3">
+                  {activeWeek.exercises.map((ex, i) => (
                     <ExerciseCard
+                      key={ex.id}
                       exercise={ex}
                       index={i}
                       isFirstWeek={isFirstWeek}
-                      lifted={reorder.draggingIndex === i}
                       prev={findPrevExercise(ex.title)}
                       onChange={(patch) => updateExercise(ex.id, patch)}
                       onDelete={() => onDeleteExercise(activeWeek.id, ex.id)}
                     />
-                  </div>
-                );
-              })}
-            </div>
-
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
             <button
               onClick={addExercise}
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-zinc-700 py-3.5 text-sm font-medium text-zinc-400 transition-colors active:border-emerald-500/50 active:text-emerald-400"
@@ -301,7 +305,7 @@ export function DayDetail({
             </button>
             {activeWeek.exercises.length > 1 && (
               <p className="mt-2 text-center text-[11px] text-zinc-600">
-                Mantén 2 segundos sobre un ejercicio para cambiarlo de lugar
+                Para reordenar ejercicios, mantené presionado el ícono de agarre (a la izquierda del nombre) y arrastrá hacia arriba o abajo.
               </p>
             )}
 

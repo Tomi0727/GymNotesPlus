@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GripVertical, Trash2, Timer } from 'lucide-react';
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Exercise } from '@/types';
 import { ToggleSwitch } from './ToggleSwitch';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -10,16 +12,22 @@ interface Props {
   exercise: Exercise;
   index: number;
   isFirstWeek: boolean;
-  lifted: boolean;
   prev?: Exercise;
   onChange: (patch: Partial<Exercise>) => void;
   onDelete: () => void;
 }
 
-export function ExerciseCard({ exercise, index, isFirstWeek, lifted, prev, onChange, onDelete }: Props) {
+export function ExerciseCard({ exercise, index, isFirstWeek,prev, onChange, onDelete }: Props) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [restTime, setRestTime] = useState<number | null>(null);
+  const { attributes, listeners, setNodeRef, transform, transition,
+    isDragging } = useSortable({id: exercise.id});
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+     transition, zIndex: isDragging ? 50 : undefined,
+    }; 
 
   useEffect(() => {
     if (restTime === null || restTime <= 0) return;
@@ -44,16 +52,24 @@ export function ExerciseCard({ exercise, index, isFirstWeek, lifted, prev, onCha
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       className={`overflow-hidden rounded-2xl bg-zinc-800/50 ring-1 transition-shadow duration-200 ${
-        lifted ? 'shadow-2xl shadow-black/60 ring-emerald-500/60' : 'ring-white/5'
+        isDragging ? "scale-[1.02] bg-zinc-800 shadow 2xl shadow-black/80 ring-2 ring-emerald-500"
+        : "ring-white/5"
       }`}
     >
       {/* Header del ejercicio */}
       <div className="flex items-center gap-2 border-b border-white/5 px-3 py-2.5">
-        <GripVertical className="h-4 w-4 shrink-0 text-zinc-600" aria-hidden />
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-700/70 text-xs font-bold text-zinc-400">
-          {index + 1}
-        </span>
+        <div {...attributes} {...listeners}
+          className=" flex cursor-grab touch-none select-none 
+          items-center gap-1.5 rounded-lg py-1 pr-1 active:cursor-grabbing"
+        >  
+          <GripVertical className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-700/70 text-xs font-bold text-zinc-400">
+            {index + 1}
+          </span>
+        </div>
         <input
           value={exercise.title}
           onChange={(e) => onChange({ title: e.target.value })}
@@ -100,9 +116,15 @@ export function ExerciseCard({ exercise, index, isFirstWeek, lifted, prev, onCha
           prevSets={prev?.sets}
           onChange={(sets) => {
             const newlyCompleted = sets.some(
-              (s, i) => s.completed && !exercise.sets[i]?.completed
+              (s, i) => {
+                const prevSet = exercise.sets[i];
+                const isFilledNow = s.reps.trim() !== "" && s.weight.trim() !== "";
+                const wasFilledBefore = prevSet 
+                ? prevSet.reps.trim() !== "" && prevSet.weight.trim() !== "" : false;
+                return isFilledNow && !wasFilledBefore;
+              }
             );
-            if (newlyCompleted) setRestTime(90);
+            if (newlyCompleted) setRestTime(120);
             onChange({ sets });
           }}
         />

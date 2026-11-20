@@ -25,7 +25,7 @@
 
 ---
 
-> Todavía queda mucho por mejorar, pero el enfoque es claro: Ser la opción con mejor interfaz de usuario y comodidad. La app seguramente tiene bugs, por eso mismo:
+> Todavía queda mucho por mejorar, pero el enfoque es claro: Ser la opción con mejor interfaz de usuario y comodidad. La app seguramente **tiene bugs**, por eso mismo:
 
-> Cualquier feedback o sugerencia me sirve muchísimo.
+> **Cualquier feedback o sugerencia me sirve muchísimo.**
 
